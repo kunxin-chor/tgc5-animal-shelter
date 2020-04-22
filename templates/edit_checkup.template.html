@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+    {{checkup}}
+      <form method="POST">
+        <label>Vet</label>
+        <select name="vet" value='{{checkup.vet}}'>
+            {% for v in vets %}
+            <option value="{{v._id}}" {%if checkup.vet_id == v._id %}selected{%endif%}>
+                {{v.name}} from {{v.clinic}}
+            </option>
+            {%endfor%}
+        </select>
+        <br/>
+        <label>Diagnosis</label>
+        <input type="text" name="diagnosis" value='{{checkup.diagnosis}}'/>
+        <br/>
+        <label>Date:</label>
+        <input type="date" name="date" value='{{checkup.date.strftime("%Y-%m-%d")}}'/>
+        <input type="submit"/>
+    </form> 
+</body>
+</html>

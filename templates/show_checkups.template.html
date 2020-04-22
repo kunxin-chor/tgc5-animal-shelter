@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Showing checkups for {{animal.name}}</h1>
+
+    {% for c in animal.checkups %}
+    <ul>
+        <li>{{ c.date}}</li>
+        <li>{{ c.vet}}</li>
+        <li>{{ c.diagnosis}}</li>
+        <li><a href="{{ url_for('edit_checkup', checkup_id = c.checkup_id) }}">Edit</a>
+        <li><a href="{{ url_for('delete_checkup', animal_id=animal._id, checkup_id=c.checkup_id) }}">Delete</a>
+    </ul>
+    {%else%}
+        No checkups have been made
+    {%endfor%}
+
+    <form method="POST">
+        <label>Vet</label>
+        <select name="vet">
+            {% for v in vets %}
+            <option value="{{v._id}}">
+                {{v.name}} from {{v.clinic}}
+            </option>
+            {%endfor%}
+        </select>
+        <br/>
+        <label>Diagnosis</label>
+        <input type="text" name="diagnosis"/>
+        <br/>
+        <label>Date:</label>
+        <input type="date" name="date"/>
+        <input type="submit"/>
+    </form> 
+</body>
+</html>
