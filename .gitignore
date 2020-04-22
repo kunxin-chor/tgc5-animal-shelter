@@ -26,3 +26,4 @@ pip-log.txt
 #Mr Developer
 venv
 *.pyc
+.env
