@@ -65,7 +65,8 @@ def process_create_animal():
     # mongo shell uses insert, pymongo uses insert_one
     client.animal_shelter.animals.insert_one({
         "name": request.form.get("animal_name"),
-        "breed": request.form.get("animal_breed")
+        "breed": request.form.get("animal_breed"),
+        "created_by": flask_login.current_user.id
     })
     return "added"
 
