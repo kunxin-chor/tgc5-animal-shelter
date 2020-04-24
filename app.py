@@ -4,6 +4,8 @@ import datetime
 import pymongo
 from bson.objectid import ObjectId
 from dotenv import load_dotenv
+from passlib.hash import pbkdf2_sha256
+import flask_login
 load_dotenv()
 
 MONGO_URI = os.environ.get('MONGO_URI')
@@ -13,6 +15,38 @@ DB_NAME = "animal_shelter"
 client = pymongo.MongoClient(MONGO_URI)
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY") # set the secret key
+
+# Creates a login manager
+login_manager = flask_login.LoginManager()  # this relatd to OOP
+login_manager.init_app(app) # this login manager is created to manage logins for our flask app
+
+
+# use back the user class from flask_login
+class User(flask_login.UserMixin):
+    pass
+
+
+def encrypt_password(plaintext):
+    return pbkdf2_sha256.hash(plaintext)
+
+
+def verify_password(plaintext, encrypted):
+    return pbkdf2_sha256.verify(plaintext, encrypted)
+
+
+# the user_loader executes automatically whenever the browser sends a request to our flask app
+# it will grab the email or username from the session and try to see if it exists or not
+@login_manager.user_loader
+def user_loader(email):
+    user_data = client[DB_NAME].users.find_one({
+        "email":email
+    })
+
+    # Create a User object
+    logged_in_user = User() # create an object from the User class by using the name of the class like a function
+    logged_in_user.id = user_data['email']
+    return logged_in_user
 
 
 @app.route('/show_animals')
@@ -44,7 +78,8 @@ def show_edit_animal(animal_id):
     })
 
     """ 
-    BIG REMIDNER -- Not all animals have checkups, so you must check if it exists first
+    BIG REMIDNER -- Not all animals have checkups, so you must check 
+    if it exists first
     if animal.checkups:
         # if checkups then do something
     """
@@ -166,6 +201,71 @@ def process_edit_checkup(checkup_id):
         }
     })
     return redirect(url_for('show_checkups_for_animal', animal_id=animal['_id']))
+
+
+@app.route('/login')
+def login():
+    return render_template('login.template.html')
+
+
+@app.route('/login', methods=["POST"])
+def process_login():
+    email = request.form.get('email')
+    password =request.form.get('password')
+
+    # get the user by the provided email
+    user_data = client[DB_NAME].users.find_one({
+        "email":email
+    })
+
+    # if the user exists
+    if user_data and verify_password(password, user_data['password']):
+        logged_in_user = User()
+        logged_in_user.id = user_data['email']
+        flask_login.login_user(logged_in_user)
+        return "Logged in success"
+    else:
+        return "Logged in failed"
+
+
+@app.route('/signup')
+def signup():
+    return render_template('signup.template.html')
+
+
+@app.route('/signup', methods=['POST'])
+def process_signup():
+    email = request.form.get('email')
+    password = request.form.get('password')
+    name = request.form.get('name')
+
+    # make sure that the email is unique
+    existing_user = client[DB_NAME]['users'].find_one({
+        "email":email
+    })
+
+    if existing_user:
+        return "Email is already in use"
+
+    client[DB_NAME]['users'].insert_one({
+        "name": name,
+        "password": encrypt_password(password),
+        "email": email
+    })
+    return "User createed"
+
+
+@app.route('/protected')
+@flask_login.login_required
+def private_sections():
+    return "Only logged in user can see this. You are " + flask_login.current_user.id
+
+
+@app.route('/logout')
+def logout():
+    flask_login.logout_user()
+    return "Logged out"
+
 
 # "magic code" -- boilerplate
 if __name__ == '__main__':
